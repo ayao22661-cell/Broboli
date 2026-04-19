@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>GTA Abidjan</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { overflow: hidden; background: #000; font-family: 'Arial Black', Arial, sans-serif; touch-action: none; }
+    canvas { display: block; }
+
+    #hud { position: fixed; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; z-index: 10; }
+
+    /* ── MINIMAP ── */
+    #minimap-wrap {
+      position: absolute; top: 14px; right: 14px;
+      width: 140px; height: 140px; border-radius: 50%;
+      border: 2px solid rgba(255,200,0,0.9);
+      overflow: hidden; background: rgba(0,0,0,0.7);
+      box-shadow: 0 0 12px rgba(255,200,0,0.4);
+    }
+    #minimapCanvas { width: 100%; height: 100%; }
+
+    /* ── STAT BARS (top-left) ── */
+    #stat-block { position: absolute; top: 14px; left: 14px; display: flex; flex-direction: column; gap: 5px; }
+    .stat-row { display: flex; align-items: center; gap: 6px; }
+    .stat-icon { font-size: 15px; width: 20px; text-align: center; }
+    .stat-bar-bg {
+      width: 110px; height: 9px; background: rgba(0,0,0,0.5);
+      border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); overflow: hidden;
+    }
+    .stat-bar { height: 100%; border-radius: 4px; transition: width .3s; }
+    #bar-health { background: linear-gradient(90deg,#ff3333,#ff7700); width: 100%; }
+    #bar-armor  { background: linear-gradient(90deg,#3399ff,#00ddff); width: 100%; }
+    #bar-stamina{ background: linear-gradient(90deg,#ffcc00,#ffff00); width: 100%; }
+
+    /* ── MONEY / TIME ── */
+    #money-display {
+      position: absolute; top: 100px; left: 14px;
+      color: #00ff88; font-size: 18px; font-weight: 900;
+      text-shadow: 0 0 8px rgba(0,255,100,0.6), 1px 1px 3px #000;
+    }
+    #time-display {
+      position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+      color: #fff; font-size: 14px; font-weight: bold;
+      text-shadow: 1px 1px 3px #000;
+      background: rgba(0,0,0,0.55); padding: 4px 14px; border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+
+    /* ── WANTED STARS ── */
+    #wanted {
+      position: absolute; top: 44px; left: 50%; transform: translateX(-50%);
+      font-size: 22px; letter-spacing: 3px; text-shadow: 1px 1px 3px #000;
+      transition: opacity .4s;
+    }
+
+    /* ── ZONE NAME ── */
+    #zone-name {
+      position: absolute; top: 90px; left: 50%; transform: translateX(-50%);
+      color: #FFD700; font-size: 16px; font-weight: 900;
+      text-shadow: 1px 1px 4px #000; opacity: 0; transition: opacity .5s;
+      background: rgba(0,0,0,0.4); padding: 3px 12px; border-radius: 10px;
+    }
+
+    /* ── MISSION BOX ── */
+    #mission-box {
+      position: absolute; bottom: 165px; left: 14px;
+      background: rgba(0,0,0,0.75); border-left: 3px solid #FFD700;
+      border-radius: 0 8px 8px 0; padding: 9px 12px;
+      color: #fff; font-size: 12px; max-width: 260px;
+      line-height: 1.5;
+    }
+    #mission-title { color: #FFD700; font-size: 13px; font-weight: bold; margin-bottom: 4px; }
+    #mission-timer { color: #ff4444; font-weight: bold; margin-top: 4px; display: none; }
+
+    /* ── NOTIFICATION ── */
+    #notification {
+      position: absolute; bottom: 165px; right: 14px;
+      background: rgba(0,0,0,0.82); color: #FFD700;
+      padding: 9px 16px; border-radius: 8px;
+      font-size: 13px; font-weight: bold;
+      border: 1px solid rgba(255,200,0,0.4);
+      opacity: 0; transition: opacity .35s;
+      max-width: 220px; text-align: right;
+    }
+
+    /* ── CROSSHAIR ── */
+    #crosshair {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      width: 20px; height: 20px; display: none;
+    }
+    #crosshair::before, #crosshair::after {
+      content: ''; position: absolute; background: rgba(255,50,50,0.9);
+    }
+    #crosshair::before { width: 2px; height: 100%; left: 50%; transform: translateX(-50%); }
+    #crosshair::after  { height: 2px; width: 100%; top: 50%; transform: translateY(-50%); }
+
+    /* ── CONTROLS (bottom) ── */
+    #controls {
+      position: absolute; bottom: 0; left: 0; right: 0; height: 155px;
+      display: flex; justify-content: space-between; align-items: flex-end;
+      padding: 0 14px 14px; pointer-events: auto;
+    }
+    #joystick-zone { width: 128px; height: 128px; position: relative; }
+    #joystick-base {
+      width: 108px; height: 108px; border-radius: 50%;
+      background: rgba(255,255,255,0.08); border: 2px solid rgba(255,255,255,0.25);
+      position: absolute; top: 10px; left: 10px;
+    }
+    #joystick-stick {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: rgba(255,180,0,0.75); border: 2px solid #FFD700;
+      position: absolute; top: 40px; left: 40px;
+    }
+
+    #btn-group { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+    .abtn {
+      border-radius: 50%; border: 2px solid rgba(255,255,255,0.35);
+      background: rgba(0,0,0,0.55); color: #fff;
+      font-size: 10px; font-weight: bold; text-align: center;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; user-select: none; -webkit-user-select: none;
+      line-height: 1.2; flex-direction: column; gap: 2px;
+    }
+    .abtn.big { width: 64px; height: 64px; font-size: 11px; }
+    .abtn.sm  { width: 52px; height: 52px; }
+    #btn-jump   { background: rgba(255,180,0,0.25); border-color: #FFD700; color: #FFD700; }
+    #btn-shoot  { background: rgba(255,30,30,0.3);  border-color: #ff4444; color: #ff8888; }
+    #btn-car    { background: rgba(0,120,255,0.25); border-color: #3399ff; color: #88ccff; }
+    #btn-run    { background: rgba(0,200,100,0.2);  border-color: #00cc66; color: #66ffaa; }
+
+    #row-btns { display: flex; gap: 8px; }
+
+    /* ── LOADING SCREEN ── */
+    #loading {
+      position: fixed; inset: 0; background: #0a0a0a;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      z-index: 999; transition: opacity .8s;
+    }
+    #loading h1 { color: #FFD700; font-size: 36px; letter-spacing: 4px; text-transform: uppercase; }
+    #loading p  { color: #aaa; margin-top: 10px; font-size: 14px; }
+    #loading-bar-bg { width: 260px; height: 6px; background: #222; border-radius: 3px; margin-top: 20px; }
+    #loading-bar    { height: 6px; background: #FFD700; border-radius: 3px; width: 0; transition: width .3s; }
+
+    /* ── KILL FEED ── */
+    #kill-feed {
+      position: absolute; top: 160px; right: 14px;
+      display: flex; flex-direction: column; gap: 4px; align-items: flex-end;
+    }
+    .kill-entry {
+      background: rgba(0,0,0,0.65); color: #fff; font-size: 11px;
+      padding: 3px 8px; border-radius: 4px; border-right: 2px solid #ff4444;
+      animation: fadeout 3s forwards;
+    }
+    @keyframes fadeout { 0%{opacity:1} 70%{opacity:1} 100%{opacity:0} }
+
+    /* ── WEAPON INDICATOR ── */
+    #weapon-hud {
+      position: absolute; bottom: 165px; right: 14px;
+      text-align: right; color: #fff; font-size: 12px;
+    }
+    #weapon-name { color: #FFD700; font-weight: bold; font-size: 13px; }
+    #ammo-count  { color: #aaa; }
+  </style>
+</head>
+<body>
+
+<!-- LOADING SCREEN -->
+<div id="loading">
+  <h1>GTA Abidjan</h1>
+  <p id="loading-msg">Chargement de la ville...</p>
+  <div id="loading-bar-bg"><div id="loading-bar"></div></div>
+</div>
+
+<canvas id="gameCanvas"></canvas>
+
+<div id="hud">
+
+  <!-- Stats -->
+  <div id="stat-block">
+    <div class="stat-row">
+      <span class="stat-icon">❤️</span>
+      <div class="stat-bar-bg"><div class="stat-bar" id="bar-health"></div></div>
+    </div>
+    <div class="stat-row">
+      <span class="stat-icon">🛡️</span>
+      <div class="stat-bar-bg"><div class="stat-bar" id="bar-armor"></div></div>
+    </div>
+    <div class="stat-row">
+      <span class="stat-icon">⚡</span>
+      <div class="stat-bar-bg"><div class="stat-bar" id="bar-stamina"></div></div>
+    </div>
+  </div>
+
+  <div id="money-display">$ 0</div>
+  <div id="time-display">☀️ 08:00</div>
+  <div id="wanted"></div>
+  <div id="zone-name">Plateau</div>
+
+  <div id="minimap-wrap">
+    <canvas id="minimapCanvas" width="140" height="140"></canvas>
+  </div>
+
+  <div id="mission-box">
+    <div id="mission-title">🔫 En attente...</div>
+    <div id="mission-desc">Explore la ville. Cherche un contact.</div>
+    <div id="mission-timer"></div>
+  </div>
+
+  <div id="notification"></div>
+  <div id="crosshair"></div>
+
+  <div id="kill-feed"></div>
+
+  <div id="weapon-hud">
+    <div id="weapon-name">POINGS</div>
+    <div id="ammo-count"></div>
+  </div>
+
+  <!-- Controls -->
+  <div id="controls">
+    <div id="joystick-zone">
+      <div id="joystick-base"></div>
+      <div id="joystick-stick"></div>
+    </div>
+    <div id="btn-group">
+      <div id="row-btns">
+        <div class="abtn sm" id="btn-run">🏃<br>SPRINT</div>
+        <div class="abtn sm" id="btn-car">🚕<br>AUTO</div>
+      </div>
+      <div id="row-btns">
+        <div class="abtn big" id="btn-shoot">🔫<br>TIRER</div>
+        <div class="abtn big" id="btn-jump">⬆️<br>SAUT</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!--
+  CORRECTION PRINCIPALE :
+  1. Une seule balise <script type="module"> — game.js importe déjà characters.js lui-même.
+     Avoir deux balises séparées causait un double chargement et un conflit de modules.
+  2. La barre de progression est maintenant pilotée depuis game.js via window.setLoadProgress().
+-->
+<script type="module" src="game.js"></script>
+
+</body>
+</html>
