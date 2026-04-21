@@ -18,10 +18,11 @@
       border: 2px solid rgba(255,200,0,0.9);
       overflow: hidden; background: rgba(0,0,0,0.7);
       box-shadow: 0 0 12px rgba(255,200,0,0.4);
+      pointer-events: auto; cursor: pointer;
     }
     #minimapCanvas { width: 100%; height: 100%; }
 
-    /* ── STAT BARS (top-left) ── */
+    /* ── STAT BARS ── */
     #stat-block { position: absolute; top: 14px; left: 14px; display: flex; flex-direction: column; gap: 5px; }
     .stat-row { display: flex; align-items: center; gap: 6px; }
     .stat-icon { font-size: 15px; width: 20px; text-align: center; }
@@ -30,9 +31,9 @@
       border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); overflow: hidden;
     }
     .stat-bar { height: 100%; border-radius: 4px; transition: width .3s; }
-    #bar-health { background: linear-gradient(90deg,#ff3333,#ff7700); width: 100%; }
-    #bar-armor  { background: linear-gradient(90deg,#3399ff,#00ddff); width: 100%; }
-    #bar-stamina{ background: linear-gradient(90deg,#ffcc00,#ffff00); width: 100%; }
+    #bar-health  { background: linear-gradient(90deg,#22cc44,#44ff66); width: 100%; }
+    #bar-armor   { background: linear-gradient(90deg,#3399ff,#00ddff); width: 100%; }
+    #bar-stamina { background: linear-gradient(90deg,#ffcc00,#ffff00); width: 100%; }
 
     /* ── MONEY / TIME ── */
     #money-display {
@@ -48,7 +49,7 @@
       border: 1px solid rgba(255,255,255,0.15);
     }
 
-    /* ── WANTED STARS ── */
+    /* ── WANTED ── */
     #wanted {
       position: absolute; top: 44px; left: 50%; transform: translateX(-50%);
       font-size: 22px; letter-spacing: 3px; text-shadow: 1px 1px 3px #000;
@@ -68,8 +69,7 @@
       position: absolute; bottom: 165px; left: 14px;
       background: rgba(0,0,0,0.75); border-left: 3px solid #FFD700;
       border-radius: 0 8px 8px 0; padding: 9px 12px;
-      color: #fff; font-size: 12px; max-width: 260px;
-      line-height: 1.5;
+      color: #fff; font-size: 12px; max-width: 260px; line-height: 1.5;
     }
     #mission-title { color: #FFD700; font-size: 13px; font-weight: bold; margin-bottom: 4px; }
     #mission-timer { color: #ff4444; font-weight: bold; margin-top: 4px; display: none; }
@@ -97,7 +97,33 @@
     #crosshair::before { width: 2px; height: 100%; left: 50%; transform: translateX(-50%); }
     #crosshair::after  { height: 2px; width: 100%; top: 50%; transform: translateY(-50%); }
 
-    /* ── CONTROLS (bottom) ── */
+    /* ── BOUTON PAUSE ── */
+    #btn-pause {
+      position: absolute; top: 14px; right: 164px;
+      width: 36px; height: 36px; border-radius: 50%;
+      background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.25);
+      color: #fff; font-size: 16px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; pointer-events: auto; user-select: none;
+    }
+
+    /* ── WEAPON HUD avec icônes SVG ── */
+    #weapon-hud {
+      position: absolute; bottom: 165px; right: 14px;
+      text-align: right; color: #fff; font-size: 12px;
+    }
+    #weapon-name { color: #FFD700; font-weight: bold; font-size: 14px; letter-spacing: 1px; }
+    #ammo-count  { color: #aaa; font-size: 11px; }
+    #weapon-icon { font-size: 22px; line-height: 1; }
+
+    /* ── ZONE D'INDICATEUR COUVERTURE ── */
+    #cover-indicator {
+      position: absolute; bottom: 320px; left: 50%; transform: translateX(-50%);
+      background: rgba(0,150,255,0.3); border: 1px solid #3399ff;
+      color: #88ccff; font-size: 11px; padding: 3px 10px; border-radius: 8px;
+      display: none; font-weight: bold;
+    }
+
+    /* ── CONTROLS ── */
     #controls {
       position: absolute; bottom: 0; left: 0; right: 0; height: 155px;
       display: flex; justify-content: space-between; align-items: flex-end;
@@ -133,7 +159,7 @@
 
     #row-btns { display: flex; gap: 8px; }
 
-    /* ── LOADING SCREEN ── */
+    /* ── LOADING ── */
     #loading {
       position: fixed; inset: 0; background: #0a0a0a;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -143,6 +169,7 @@
     #loading p  { color: #aaa; margin-top: 10px; font-size: 14px; }
     #loading-bar-bg { width: 260px; height: 6px; background: #222; border-radius: 3px; margin-top: 20px; }
     #loading-bar    { height: 6px; background: #FFD700; border-radius: 3px; width: 0; transition: width .3s; }
+    #loading-sub { color: #666; font-size: 11px; margin-top: 8px; }
 
     /* ── KILL FEED ── */
     #kill-feed {
@@ -156,22 +183,35 @@
     }
     @keyframes fadeout { 0%{opacity:1} 70%{opacity:1} 100%{opacity:0} }
 
-    /* ── WEAPON INDICATOR ── */
-    #weapon-hud {
-      position: absolute; bottom: 165px; right: 14px;
-      text-align: right; color: #fff; font-size: 12px;
+    /* ── RÉPUTATION ── */
+    #rep-bar {
+      position: absolute; top: 125px; left: 14px;
+      color: #aaa; font-size: 10px; font-weight: bold;
+      display: flex; gap: 4px; align-items: center;
     }
-    #weapon-name { color: #FFD700; font-weight: bold; font-size: 13px; }
-    #ammo-count  { color: #aaa; }
+    .rep-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2);
+      transition: background .4s;
+    }
+    .rep-dot.active { background: #FFD700; }
+
+    /* ── INDICATEUR COUVERTURE ACTIVE ── */
+    #cover-badge {
+      position: absolute; bottom: 320px; left: 50%; transform: translateX(-50%);
+      background: rgba(0,120,255,0.25); border: 1px solid #3399ff88;
+      color: #88ccff; font-size: 11px; padding: 3px 12px; border-radius: 8px;
+      display: none; letter-spacing: 1px; font-weight: bold;
+    }
   </style>
 </head>
 <body>
 
-<!-- LOADING SCREEN -->
 <div id="loading">
   <h1>GTA Abidjan</h1>
   <p id="loading-msg">Chargement de la ville...</p>
   <div id="loading-bar-bg"><div id="loading-bar"></div></div>
+  <div id="loading-sub">🇨🇮 Plateau · Cocody · Adjamé · Yopougon · Treichville</div>
 </div>
 
 <canvas id="gameCanvas"></canvas>
@@ -194,10 +234,23 @@
     </div>
   </div>
 
-  <div id="money-display">$ 0</div>
+  <!-- Réputation points -->
+  <div id="rep-bar">
+    <span>REP</span>
+    <div class="rep-dot" id="rep-0"></div>
+    <div class="rep-dot" id="rep-1"></div>
+    <div class="rep-dot" id="rep-2"></div>
+    <div class="rep-dot" id="rep-3"></div>
+    <div class="rep-dot" id="rep-4"></div>
+  </div>
+
+  <div id="money-display">💵 0 FCFA</div>
   <div id="time-display">☀️ 08:00</div>
   <div id="wanted"></div>
   <div id="zone-name">Plateau</div>
+
+  <!-- Bouton pause -->
+  <div id="btn-pause">☰</div>
 
   <div id="minimap-wrap">
     <canvas id="minimapCanvas" width="140" height="140"></canvas>
@@ -211,10 +264,12 @@
 
   <div id="notification"></div>
   <div id="crosshair"></div>
-
   <div id="kill-feed"></div>
+  <div id="cover-badge">🛡️ COUVERTURE</div>
 
+  <!-- Weapon HUD avec icône -->
   <div id="weapon-hud">
+    <div id="weapon-icon">👊</div>
     <div id="weapon-name">POINGS</div>
     <div id="ammo-count"></div>
   </div>
@@ -239,12 +294,24 @@
 
 </div>
 
-<!--
-  CORRECTION PRINCIPALE :
-  1. Une seule balise <script type="module"> — game.js importe déjà characters.js lui-même.
-     Avoir deux balises séparées causait un double chargement et un conflit de modules.
-  2. La barre de progression est maintenant pilotée depuis game.js via window.setLoadProgress().
--->
+<script>
+// Mise à jour des points de réputation depuis game.js
+window.updateRepDisplay = function(rep) {
+  const total = Object.values(rep).reduce((a,b)=>a+b, 0);
+  const dots = Math.min(5, Math.floor(total/20));
+  for(let i=0;i<5;i++) {
+    const d = document.getElementById('rep-'+i);
+    if(d) d.className = 'rep-dot' + (i<dots?' active':'');
+  }
+};
+
+// Indicateur couverture
+window.showCoverBadge = function(show) {
+  const el = document.getElementById('cover-badge');
+  if(el) el.style.display = show ? 'block' : 'none';
+};
+</script>
+
 <script type="module" src="game.js"></script>
 
 </body>
