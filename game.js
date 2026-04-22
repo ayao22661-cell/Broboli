@@ -247,6 +247,8 @@ function pirogue(x, z) {
   scene.add(g);
 }
 pirogue(-50, -200); pirogue(30, -195); pirogue(-90, -205); pirogue(80, -198);
+// Pirogues supplémentaires côté port
+pirogue(45, -185); pirogue(55, -192); pirogue(10, -188);
 
 function bridge(x, z, len) {
   const m = new THREE.Mesh(new THREE.BoxGeometry(len, 0.5, 11), makeMat(0x777777));
@@ -256,7 +258,7 @@ function bridge(x, z, len) {
     rail.position.set(x, 0.65, z + side); scene.add(rail);
   });
 }
-bridge(0, -168, 10); bridge(70, -172, 10);
+bridge(0, -168, 10); bridge(70, -172, 10); bridge(50, -168, 10);
 
 // ══════════════════════════════════════════════════════
 //  COLLISIONS AABB
@@ -598,6 +600,122 @@ muralWall(  8,  60, 6, Math.PI/2); muralWall(-8,-60, 6, Math.PI/2);
 muralWall(-68, 130, 7, 0);    muralWall( 68,-130, 7, Math.PI);
 
 // ══════════════════════════════════════════════════════
+//  ZONE PORTUAIRE (Treichville bas)
+// ══════════════════════════════════════════════════════
+function container(x, z, color) {
+  const g = new THREE.Group();
+  const box = new THREE.Mesh(new THREE.BoxGeometry(6, 3, 2.5), makeMat(color, 0.85));
+  box.position.y = 1.5; box.castShadow = true; g.add(box);
+  const stripe = new THREE.Mesh(new THREE.PlaneGeometry(5.8, 0.3),
+    makeMat(0xffffff, 0.5));
+  stripe.position.set(0, 2.5, 1.26); g.add(stripe);
+  g.position.set(x, 0, z); scene.add(g);
+}
+// Rangées de conteneurs au port
+[[18,-155],[25,-155],[32,-155],[39,-155],[18,-159],[25,-159],[32,-159]].forEach(([x,z],i) => {
+  const cols = [0xCC2200,0x0044AA,0xFFAA00,0x004400,0xAA2200,0x224488,0x886600];
+  container(x, z, cols[i]);
+});
+[[18,-163],[25,-163],[32,-163]].forEach(([x,z],i) => {
+  container(x, z, [0x993300,0x113366,0x885500][i]);
+});
+
+// Grue portuaire
+(function portCrane(x, z) {
+  const g = new THREE.Group();
+  const pillar = new THREE.Mesh(new THREE.BoxGeometry(0.6, 14, 0.6), makeMat(0xCC8800, 0.5, 0.6));
+  pillar.position.y = 7; g.add(pillar);
+  const arm = new THREE.Mesh(new THREE.BoxGeometry(12, 0.5, 0.5), makeMat(0xCC8800, 0.5, 0.6));
+  arm.position.set(4, 14, 0); g.add(arm);
+  const cable = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 6, 4), makeMat(0x888888));
+  cable.position.set(8, 11, 0); g.add(cable);
+  const hook = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.6, 0.8), makeMat(0x444444));
+  hook.position.set(8, 7.8, 0); g.add(hook);
+  g.position.set(x, 0, z); scene.add(g);
+})(42, -162);
+
+// Ponton / quai béton
+const quaiMesh = new THREE.Mesh(new THREE.BoxGeometry(30, 0.6, 8), makeMat(0x888880, 0.9));
+quaiMesh.position.set(22, 0.3, -170); scene.add(quaiMesh);
+// Bollards sur le quai
+[14,18,22,26,30,34].forEach(x => {
+  const bol = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 1.0, 6), makeMat(0x333333));
+  bol.position.set(x, 1.0, -167); scene.add(bol);
+});
+// Barque de pêcheur au quai
+(function fishBoat(x, z) {
+  const g = new THREE.Group();
+  const hull = new THREE.Mesh(new THREE.BoxGeometry(5, 0.8, 2), makeMat(0x884422, 0.8));
+  hull.position.y = 0.4; g.add(hull);
+  const cab = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.2, 1.6), makeMat(0xCCBB88, 0.7));
+  cab.position.set(-1, 1.1, 0); g.add(cab);
+  const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 4, 5), makeMat(0x553311));
+  mast.position.set(1.5, 2.5, 0); g.add(mast);
+  g.position.set(x, 0.06, z); scene.add(g);
+})(15, -172);
+
+// ── STADE HOUPHOUËT-BOIGNY (nord, zone Plateau) ──────
+(function stade(cx, cz) {
+  const g = new THREE.Group();
+  const oval = new THREE.Mesh(new THREE.CylinderGeometry(22, 22, 2.5, 32), makeMat(0xCCBB99, 0.8));
+  oval.position.y = 1.25; g.add(oval);
+  const field = new THREE.Mesh(new THREE.CylinderGeometry(18, 18, 0.2, 32), makeMat(0x2a8a22, 0.9));
+  field.position.y = 2.6; g.add(field);
+  // Lignes du terrain
+  const lineH = new THREE.Mesh(new THREE.BoxGeometry(28, 0.05, 0.3), makeMat(0xffffff, 0.3));
+  lineH.position.y = 2.71; g.add(lineH);
+  const lineV = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.05, 22), makeMat(0xffffff, 0.3));
+  lineV.position.y = 2.71; g.add(lineV);
+  const circle = new THREE.Mesh(new THREE.CylinderGeometry(5, 5, 0.05, 24), makeMat(0xffffff, 0.3));
+  circle.position.y = 2.72; g.add(circle);
+  // Tribunes
+  for(let i=0;i<8;i++){
+    const a=(i/8)*Math.PI*2;
+    const trib = new THREE.Mesh(new THREE.BoxGeometry(8, 3, 4), makeMat(0xEE8833, 0.7));
+    trib.position.set(Math.cos(a)*19, 3, Math.sin(a)*19);
+    trib.rotation.y = -a; g.add(trib);
+  }
+  // Mâts de lumière
+  [0,Math.PI/2,Math.PI,Math.PI*3/2].forEach(a => {
+    const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.2, 12, 6), makeMat(0x888888));
+    mast.position.set(Math.cos(a)*21, 6, Math.sin(a)*21); g.add(mast);
+    const lgt = new THREE.PointLight(0xfffacc, 0, 30);
+    lgt.position.set(cx+Math.cos(a)*21, 12, cz+Math.sin(a)*21);
+    scene.add(lgt); lampadaires.push(lgt);
+  });
+  g.position.set(cx, 0, cz); scene.add(g);
+  buildings.push({ x:cx, z:cz, w:44, d:44, h:6, mesh:oval, origColor:0xCCBB99 });
+})(-20, 160);
+
+// ── MARCHÉ DE NUIT (Yopougon, actif dès 20h) ─────────
+const nightMarketLights = [];
+(function marcheNuit(cx, cz) {
+  // Tentes illuminées
+  const tentColors = [0xFF4400,0xFFAA00,0x00AA44,0x0044CC,0xFF0088,0x8800CC];
+  for(let i=0;i<8;i++){
+    const col = tentColors[i%tentColors.length];
+    const tente = new THREE.Mesh(new THREE.ConeGeometry(1.8, 1.5, 6), makeMat(col, 0.7));
+    const tx = cx + (i%4)*4 - 6;
+    const tz = cz + Math.floor(i/4)*4;
+    tente.position.set(tx, 3.5, tz); scene.add(tente);
+    const base = new THREE.Mesh(new THREE.BoxGeometry(3.2, 2.5, 3.0), makeMat(0xBB9966, 0.85));
+    base.position.set(tx, 1.25, tz); scene.add(base);
+    const light = new THREE.PointLight(col, 0, 8);
+    light.position.set(tx, 3.8, tz); scene.add(light);
+    nightMarketLights.push(light);
+  }
+})(110, -70);
+
+// ── Bâtiments supplémentaires : zone industrielle nord ──
+building( 110, 130,  16, 10, 8,  0x887766, 0xaaaaaa);  // entrepôt nord
+building(-110, 120,  14, 10, 6,  0x776655, 0x999988);
+building( 115, 160,  12,  9, 5,  0x998877, 0xbbbbaa);
+building(-115, 150,  13,  9, 7,  0x887766, 0xaaaaaa);
+
+// Pont supplémentaire (connexion Treichville-lagune est)
+bridge(50, -168, 10);
+
+// ══════════════════════════════════════════════════════
 //  ÉTALS DU MARCHÉ + MAQUIS
 // ══════════════════════════════════════════════════════
 // Maquis (restaurants de rue) — liste pour le cycle jour/nuit
@@ -862,6 +980,8 @@ makeVehicle(  3,  80, 0xFF4400, 'woro');   // avenue centrale loin
 makeVehicle(-70,  15, 0x3355CC, 'gbaka'); // route Plateau/Adjamé
 makeVehicle( 70, -10, 0xCC0000, 'moto');  // route Cocody/Yopougon
 makeVehicle(  3, -80, 0x00AA44, 'moto');  // avenue centrale sud loin
+makeVehicle( 25, -152, 0x993300, 'woro'); // zone portuaire
+makeVehicle(-20,  158, 0x0055CC, 'gbaka'); // stade
 
 // ══════════════════════════════════════════════════════
 //  PNJs
@@ -885,6 +1005,14 @@ const npcDefs = [
   ['dark',  'civil',   15, -80], ['medium','gang',    30, -95],
   // Centre
   ['dark',  'police',   5, -20], ['medium','police', -5,  20],
+  // Zone portuaire
+  ['dark',  'gang',    25, -155], ['medium','braqueur', 35, -160],
+  ['dark',  'civil',   20, -152], ['light', 'civil',   30, -148],
+  // Stade
+  ['light', 'civil',  -15, 155], ['medium','civil',  -25, 165],
+  ['dark',  'civil',  -10, 158],
+  // Marché de nuit Yopougon
+  ['dark',  'dealer', 108, -72], ['medium','civil',  115, -65],
 ];
 
 npcDefs.forEach(([skin, outfit, x, z]) => {
@@ -932,6 +1060,26 @@ const missions = [
     desc: 'Atteins les 3 checkpoints! Plateau → Cocody → Yopougon.',
     reward: 4000, targets: [{x:-70,z:90},{x:75,z:120},{x:75,z:-95}], currentTarget: 0,
     type: 'race', timerSec: 120,
+  },
+  {
+    id: 6, title: '🏖️ Livraison Lagune',
+    desc: 'Livre le colis au ponton de Treichville avant que les flics arrivent!',
+    reward: 3500, target: { x: 18, z: -165 }, type: 'heist', timerSec: 100,
+  },
+  {
+    id: 7, title: '🎭 Braqueur Fantôme',
+    desc: 'Élimine 5 ennemis sans te faire voir. Reste dans les zones sombres.',
+    reward: 5000, target: null, type: 'eliminate', killCount: 5, timerSec: 240,
+  },
+  {
+    id: 8, title: '🚁 Alerte Maximum',
+    desc: 'Atteins le port avec wanted 5⭐ et ressors vivant!',
+    reward: 6000, target: { x: 30, z: -160 }, type: 'escape', timerSec: 90,
+  },
+  {
+    id: 9, title: '🌅 Convoi du Matin',
+    desc: 'Escorte le gbaka de Adjamé jusqu\'au marché central.',
+    reward: 2000, target: { x: 0, z: 0 }, type: 'vehicle', timerSec: 80,
   },
 ];
 
@@ -1078,6 +1226,16 @@ reloadBtn.innerHTML = '🔄<br>RELOAD';
 document.getElementById('row-btns').appendChild(reloadBtn);
 btnPress('btn-reload', reload);
 
+const crouchBtn = document.createElement('div');
+crouchBtn.className = 'abtn sm'; crouchBtn.id = 'btn-crouch';
+crouchBtn.style.cssText = 'background:rgba(80,200,255,0.2);border-color:#44aaff;color:#88ccff;';
+crouchBtn.innerHTML = '🧎<br>COVER';
+document.getElementById('row-btns').appendChild(crouchBtn);
+btnPress('btn-crouch', () => {
+  keys.crouch = !keys.crouch;
+  crouchBtn.style.background = keys.crouch ? 'rgba(80,200,255,0.5)' : 'rgba(80,200,255,0.2)';
+});
+
 // ══════════════════════════════════════════════════════
 //  PAUSE
 // ══════════════════════════════════════════════════════
@@ -1150,7 +1308,21 @@ function finishReload() {
   updateAmmoDisplay(); showNotif('✅ Prêt!');
 }
 
-// ── Pool de balles ──
+// ── Pool flash muzzle (réutilisable) ──────────────────
+const _muzzleFlash = new THREE.Mesh(
+  new THREE.SphereGeometry(0.18, 5, 4),
+  new THREE.MeshStandardMaterial({ color:0xFFAA00, emissive:0xFFAA00, emissiveIntensity:3.5, transparent:true, opacity:0.85 })
+);
+_muzzleFlash.visible = false;
+scene.add(_muzzleFlash);
+let _muzzleTimer = null;
+
+function showMuzzleFlash(origin, fwd) {
+  _muzzleFlash.position.copy(origin).addScaledVector(fwd, 0.8);
+  _muzzleFlash.visible = true;
+  clearTimeout(_muzzleTimer);
+  _muzzleTimer = setTimeout(() => { _muzzleFlash.visible = false; }, 60);
+}
 const BULLET_POOL_SIZE = 80;
 const bulletGeo = new THREE.SphereGeometry(0.06, 4, 4);
 const bulletMatPlayer = new THREE.MeshStandardMaterial({ color:0xFFDD44, emissive:0xFFDD44, emissiveIntensity:1 });
@@ -1207,14 +1379,7 @@ function fireBullet() {
   bm.userData.vel.copy(fwd).multiplyScalar(w==='ak47'?1.8:1.2);
   bm.userData.life = 60; bullets.push(bm);
 
-  // Flash muzzle : simple sprite émissif (pas de PointLight = gains perfs)
-  const fl = new THREE.Mesh(
-    new THREE.SphereGeometry(0.18, 5, 4),
-    new THREE.MeshStandardMaterial({ color:0xFFAA00, emissive:0xFFAA00, emissiveIntensity:3.5, transparent:true, opacity:0.85 })
-  );
-  fl.position.copy(origin).addScaledVector(fwd, 0.8);
-  scene.add(fl);
-  setTimeout(() => scene.remove(fl), 60);
+  showMuzzleFlash(origin, fwd);
 
   raycasterPool.set(origin, fwd.normalize()); raycasterPool.far = w==='ak47'?60:30;
 
@@ -1505,6 +1670,10 @@ function updateDayNight(dtMs) {
   const maqOn = h>=21 || h<4;
   maquis.forEach(m => { m.light.intensity = maqOn ? 2 : 0; });
 
+  // Marché de nuit actif de 20h à 4h
+  const nightMktOn = h>=20 || h<4;
+  nightMarketLights.forEach(l => { l.intensity = nightMktOn ? 1.5 : 0; });
+
   // Fenêtres des bâtiments s'allument la nuit (seulement si changement)
   if (_lastNightState !== isNight) {
     _lastNightState = isNight;
@@ -1647,6 +1816,9 @@ const zones = [
   { name:'Adjamé',      minX:-115, maxX:-40,  minZ:-150, maxZ:-40 },
   { name:'Yopougon',    minX:  40, maxX:125,  minZ:-150, maxZ:-40 },
   { name:'Treichville', minX:   0, maxX: 50,  minZ:-165, maxZ:-50 },
+  { name:'Port d\'Abidjan', minX: 10, maxX: 55, minZ:-180, maxZ:-150 },
+  { name:'Stade FHB',   minX: -45, maxX:  5,  minZ: 135, maxZ:185 },
+  { name:'Zone Industrielle', minX: 90, maxX:135, minZ: 110, maxZ:175 },
   { name:'Lagune',      minX:-200, maxX:200,  minZ:-240, maxZ:-170},
 ];
 let lastZone = '';
@@ -1933,8 +2105,8 @@ function animate(now = 0) {
     if(keys.up||joyY<-0.22)   d.accel=1;
     else if(keys.down||joyY>0.22) d.accel=-0.6;
     else d.accel=0;
-    if(keys.left ||joyX<-0.22)  d.steer= 1;
-    else if(keys.right||joyX>0.22) d.steer=-1;
+    if(keys.left ||joyX<-0.22)  d.steer=-1;
+    else if(keys.right||joyX>0.22) d.steer= 1;
     else d.steer=0;
 
     d.speed += d.accel*d.accelRate; d.speed*=d.friction;
@@ -1959,8 +2131,8 @@ function animate(now = 0) {
     const spd = isSprinting&&playerState.stamina>0 ? 0.16 : 0.10;
     if(keys.up   ||joyY<-0.28) playerChar.group.position.addScaledVector(fwd,  spd);
     if(keys.down ||joyY> 0.28) playerChar.group.position.addScaledVector(fwd, -spd*0.7);
-    if(keys.left ||joyX<-0.28) playerChar.group.position.addScaledVector(right,-spd*0.8);
-    if(keys.right||joyX> 0.28) playerChar.group.position.addScaledVector(right, spd*0.8);
+    if(keys.left ||joyX<-0.28) playerChar.group.position.addScaledVector(right, spd*0.8);
+    if(keys.right||joyX> 0.28) playerChar.group.position.addScaledVector(right,-spd*0.8);
     checkBuildingCollision(playerChar.group.position, 0.45);
     checkVehicleCollision(playerChar.group.position, null, 0.5);
     clampWorld(playerChar.group.position);
@@ -1968,7 +2140,7 @@ function animate(now = 0) {
       let ta = camAngleH;
       // Direction combinée joystick (8 directions)
       if(Math.abs(joyX)>0.28 || Math.abs(joyY)>0.28) {
-        ta = camAngleH + Math.atan2(joyX, -joyY);
+        ta = camAngleH + Math.atan2(-joyX, -joyY);
       } else if(keys.up)    { ta = camAngleH; }
       else if(keys.down)    { ta = camAngleH + Math.PI; }
       else if(keys.left)    { ta = camAngleH - Math.PI/2; }
@@ -2111,7 +2283,7 @@ function animate(now = 0) {
       playKlaxon(); klaxonTimer=0;
     }
 
-d.aiTimer += dtMs;
+    d.aiTimer += dtMs;
     if(!d.aiTarget || d.aiTimer > (5000 + i*600)) {
       d.aiTimer = 0;
       const px = v.position.x, pz = v.position.z;
@@ -2248,6 +2420,9 @@ async function startGame() {
     spawnLoot(-70,  90, 'ammo_ak47'); spawnLoot(70,  90, 'money');
     spawnLoot(-70, -80, 'armor');     spawnLoot(70, -80, 'ammo_pistol');
     spawnLoot( 20, -90, 'health');
+    // Loot nouvelles zones
+    spawnLoot( 25, -155, 'ammo_ak47'); spawnLoot( 32, -158, 'money');
+    spawnLoot(-18,  158, 'health');    spawnLoot(110, -68, 'money');
     await animateBar(75, 100, 300);
     const loading=document.getElementById('loading');
     if(loading) { loading.style.opacity='0'; setTimeout(()=>loading.remove(),800); }
