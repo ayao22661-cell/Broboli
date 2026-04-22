@@ -48,7 +48,7 @@ const W = window.innerWidth, H = window.innerHeight;
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: perfLevel !== 'low' });
 renderer.setSize(W, H);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, perfLevel === 'low' ? 1 : 2));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, perfLevel === 'low' ? 1 : 1.5));
 renderer.shadowMap.enabled = perfLevel !== 'low';
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -158,7 +158,7 @@ scene.add(ambient);
 const sun = new THREE.DirectionalLight(0xfff8e0, 1.3);
 sun.position.set(40, 80, 40);
 sun.castShadow = perfLevel !== 'low';
-sun.shadow.mapSize.set(perfLevel === 'low' ? 512 : 2048, perfLevel === 'low' ? 512 : 2048);
+sun.shadow.mapSize.set(perfLevel === 'low' ? 512 : 1024, perfLevel === 'low' ? 512 : 1024);
 sun.shadow.camera.near = 1; sun.shadow.camera.far = 320;
 sun.shadow.camera.left = sun.shadow.camera.bottom = -180;
 sun.shadow.camera.right = sun.shadow.camera.top = 180;
@@ -317,19 +317,18 @@ function building(x, z, w, d, h, color, windowColor = 0x88bbdd, style = 'default
     glassFront.position.set(0, 0, d / 2 + 0.02); mesh.add(glassFront);
   }
 
-  const cols = Math.max(1, Math.floor(w / 1.6));
-  const rows = Math.max(1, Math.floor(h / 2.5));
-  for (let c = 0; c < cols; c++) {
-    for (let r = 0; r < rows; r++) {
-      const wx = -w / 2 + (c + 0.5) * (w / cols);
-      const wy = 1.2 + r * (h / rows - 0.3);
-      const wm = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.55, 0.7),
-        new THREE.MeshStandardMaterial({ color: windowColor, emissive: windowColor, emissiveIntensity: 0.1, roughness: 0.3 })
-      );
-      wm.position.set(wx, wy - h / 2, d / 2 + 0.01);
-      mesh.add(wm);
-    }
+  // Fenêtres : groupées en une seule bande par étage (moins de draw calls)
+  const cols = Math.max(1, Math.min(4, Math.floor(w / 2.5)));
+  const rows = Math.max(1, Math.min(6, Math.floor(h / 3.5)));
+  // Une bande horizontale par étage au lieu de fenêtres individuelles
+  for (let r = 0; r < rows; r++) {
+    const wy = 1.5 + r * (h / rows);
+    const wm = new THREE.Mesh(
+      new THREE.PlaneGeometry(w * 0.88, 0.55),
+      new THREE.MeshStandardMaterial({ color: windowColor, emissive: windowColor, emissiveIntensity: 0.08, roughness: 0.3 })
+    );
+    wm.position.set(0, wy - h / 2, d / 2 + 0.01);
+    mesh.add(wm);
   }
 
   const roof = new THREE.Mesh(new THREE.BoxGeometry(w + 0.3, 0.4, d + 0.3), makeMat(0x333333));
@@ -445,26 +444,30 @@ function flamboyant(x, z) {
 
 [
   // Centre
-  [7,7],[7,-7],[-7,7],[-7,-7],[12,12],[-12,12],[12,-12],
+  [7,7],[7,-7],[-7,7],[-7,-7],[12,12],[-12,12],[12,-12],[-12,-12],[16,0],[-16,0],[0,16],[0,-16],
   // Axes des routes
   [8,40],[8,80],[8,130],[-8,50],[-8,90],[-8,140],
   [8,-40],[8,-80],[8,-130],[-8,-50],[-8,-90],[-8,-140],
   [75,50],[75,90],[75,140],[-75,60],[-75,100],[-75,130],
   [75,-50],[75,-90],[75,-130],[-75,-60],[-75,-100],[-75,-130],
-  // Cocody
-  [55,65],[60,110],[100,80],[80,155],
+  // Cocody (dense)
+  [55,65],[60,110],[100,80],[80,155],[65,95],[90,115],[110,70],[70,135],
   // Plateau
-  [-55,65],[-60,110],[-100,75],[-80,145],
+  [-55,65],[-60,110],[-100,75],[-80,145],[-65,95],[-90,115],[-110,70],[-70,135],
   // Yopougon
-  [55,-65],[60,-110],[100,-80],
+  [55,-65],[60,-110],[100,-80],[70,-135],[85,-70],[95,-105],
   // Adjamé
-  [-55,-65],[-60,-110],[-100,-80],
+  [-55,-65],[-60,-110],[-100,-80],[-70,-135],[-85,-70],[-95,-105],
   // Treichville
-  [10,-75],[25,-130],[40,-160],
+  [10,-75],[25,-130],[40,-160],[18,-100],[32,-145],
+  // Lagune
+  [-40,-190],[0,-190],[40,-190],[-80,-195],[80,-195],
 ].forEach(([x,z]) => palm(x, z));
 
-[[-80,85],[-60,130],[80,90],[65,155],[-75,-90],[75,-100],[20,-120],[-30,50],[40,35]].forEach(([x,z]) => bananier(x, z));
-[[90,70],[70,140],[-90,80],[-70,120],[90,-70],[70,-140],[-90,-80],[30,-80],[55,-150]].forEach(([x,z]) => flamboyant(x, z));
+[[-80,85],[-60,130],[80,90],[65,155],[-75,-90],[75,-100],[20,-120],[-30,50],[40,35],
+ [-45,75],[45,-75],[30,110],[-30,-110],[55,170],[-55,-170],[15,-85],[-15,85]].forEach(([x,z]) => bananier(x, z));
+[[90,70],[70,140],[-90,80],[-70,120],[90,-70],[70,-140],[-90,-80],[30,-80],[55,-150],
+ [-40,155],[40,-155],[0,170],[0,-170],[85,50],[-85,-50],[120,40],[-120,-40]].forEach(([x,z]) => flamboyant(x, z));
 
 // ══════════════════════════════════════════════════════
 //  PANNEAUX PUBLICITAIRES
@@ -489,33 +492,170 @@ billboard(-72, -72, 0);       billboard( 72, -72, Math.PI);
 billboard(  8,  95, Math.PI/2); billboard( -8, -95, -Math.PI/2);
 billboard(-100, 85, 0.4);     billboard(100, -85, -0.4);
 billboard( 18, -75, 0.5);     billboard(-18,  80, -0.3);
+// Panneaux supplémentaires sur axes secondaires
+billboard(  0,  55, 0.1); billboard( 0, -55, 0.15); billboard(45, 45, 1.2); billboard(-45, -45, -1.1);
+
+// ══════════════════════════════════════════════════════
+//  KIOSQUES, ARRÊTS DE BUS, CABINES, MOBILIER URBAIN
+// ══════════════════════════════════════════════════════
+function kiosk(x, z, angle = 0) {
+  const g = new THREE.Group();
+  // Corps kiosque (petite boutique de rue)
+  const body = new THREE.Mesh(new THREE.BoxGeometry(2.4, 2.2, 2.0), makeMat(0xCC8833));
+  body.position.y = 1.1; body.castShadow = true; g.add(body);
+  // Toit incliné bicolore
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.15, 2.4), makeMat(0xDD3300, 0.7));
+  roof.position.y = 2.28; g.add(roof);
+  // Vitrine
+  const glass = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 1.4),
+    new THREE.MeshStandardMaterial({ color: 0x88ccee, transparent: true, opacity: 0.35, roughness: 0.05 }));
+  glass.position.set(0, 1.0, 1.02); g.add(glass);
+  // Enseigne colorée
+  const sign = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.4, 0.08), makeMat(0xFFAA00, 0.4));
+  sign.position.set(0, 2.0, 1.05); g.add(sign);
+  g.position.set(x, 0, z); g.rotation.y = angle; scene.add(g);
+}
+
+function busStop(x, z, angle = 0) {
+  const g = new THREE.Group();
+  // Abri bus
+  const back = new THREE.Mesh(new THREE.BoxGeometry(3.5, 2.4, 0.12), makeMat(0x888880, 0.6));
+  back.position.y = 1.2; g.add(back);
+  const roof2 = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.12, 1.0), makeMat(0x666660, 0.5));
+  roof2.position.set(0, 2.45, 0.44); g.add(roof2);
+  // Côtés vitrés
+  [-1.65, 1.65].forEach(sx => {
+    const side = new THREE.Mesh(new THREE.BoxGeometry(0.10, 2.4, 1.0),
+      new THREE.MeshStandardMaterial({ color: 0x88aacc, transparent: true, opacity: 0.45, roughness: 0.1 }));
+    side.position.set(sx, 1.2, 0.44); g.add(side);
+  });
+  // Panneau SOTRA
+  const panel = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.55, 0.10), makeMat(0x0055AA, 0.5));
+  panel.position.set(0, 2.0, -0.05); g.add(panel);
+  // Banc
+  const bench = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.10, 0.40), makeMat(0x553311, 0.8));
+  bench.position.set(0, 0.50, 0.35); g.add(bench);
+  const leg1 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.50, 0.08), makeMat(0x444444));
+  leg1.position.set(-1.1, 0.25, 0.35); g.add(leg1);
+  const leg2 = leg1.clone(); leg2.position.set(1.1, 0.25, 0.35); g.add(leg2);
+  g.position.set(x, 0, z); g.rotation.y = angle; scene.add(g);
+}
+
+function cabineTel(x, z) {
+  const g = new THREE.Group();
+  const booth = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2.2, 0.9),
+    new THREE.MeshStandardMaterial({ color: 0xFFAA00, roughness: 0.5 }));
+  booth.position.y = 1.1; g.add(booth);
+  // Logo orange (MTN)
+  const logo = new THREE.Mesh(new THREE.PlaneGeometry(0.55, 0.55),
+    new THREE.MeshStandardMaterial({ color: 0xFFCC00, emissive: 0xFFCC00, emissiveIntensity: 0.15 }));
+  logo.position.set(0, 1.8, 0.46); g.add(logo);
+  // Toit
+  const top = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.10, 1.0), makeMat(0xEE8800, 0.6));
+  top.position.y = 2.25; g.add(top);
+  g.position.set(x, 0, z); scene.add(g);
+}
+
+function muralWall(x, z, w, angle = 0) {
+  // Mur peint coloré style ivoirien
+  const colors = [0xFF6600, 0x00AA44, 0xFF0000, 0x0044CC, 0xFFCC00];
+  const g = new THREE.Group();
+  const wall = new THREE.Mesh(new THREE.BoxGeometry(w, 3.5, 0.25), makeMat(0xDDAA88, 0.9));
+  wall.position.y = 1.75; g.add(wall);
+  // Bandes colorées verticales
+  const stripes = Math.floor(w / 1.2);
+  for (let i = 0; i < stripes; i++) {
+    const stripe = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 3.0),
+      new THREE.MeshStandardMaterial({ color: colors[i % colors.length], roughness: 0.8 }));
+    stripe.position.set(-w/2 + i*(w/stripes) + 0.4, 1.75, 0.13);
+    g.add(stripe);
+  }
+  g.position.set(x, 0, z); g.rotation.y = angle; scene.add(g);
+}
+
+// Kiosques dans les quartiers
+kiosk(-8,  10, 0.2);    kiosk( 8,  10, -0.2);
+kiosk(-8, -10, 0.1);    kiosk( 8, -10, -0.1);
+kiosk(-68, 88, 0.3);    kiosk(-72, 105, -0.2);  // Plateau
+kiosk( 68, 88, -0.3);   kiosk( 72, 105, 0.2);   // Cocody
+kiosk(-68,-88, 0.4);    kiosk(-72,-105,-0.3);   // Adjamé
+kiosk( 68,-88,-0.4);    kiosk( 72,-105, 0.3);   // Yopougon
+kiosk( 18,-78, 0.5);    kiosk( 28,-95,-0.4);    // Treichville
+
+// Arrêts de bus sur les axes principaux
+busStop(  0,  45, Math.PI/2); busStop(  0, -45, Math.PI/2);
+busStop( 68,  30, 0);         busStop(-68,  30, Math.PI);
+busStop( 68, -30, 0);         busStop(-68, -30, Math.PI);
+busStop(  5, 100, Math.PI/2); busStop( -5,-100, Math.PI/2);
+
+// Cabines téléphoniques
+cabineTel(-5, 25); cabineTel(5, -25); cabineTel(-68, 60); cabineTel(68, -60);
+cabineTel(20, -72); cabineTel(-20, 72);
+
+// Murals colorés (culture ivoirienne)
+muralWall(-45,  30, 8, 0);    muralWall( 45, -30, 8, Math.PI);
+muralWall(  8,  60, 6, Math.PI/2); muralWall(-8,-60, 6, Math.PI/2);
+muralWall(-68, 130, 7, 0);    muralWall( 68,-130, 7, Math.PI);
 
 // ══════════════════════════════════════════════════════
 //  ÉTALS DU MARCHÉ + MAQUIS
 // ══════════════════════════════════════════════════════
-[[-64,-78],[-68,-81],[-72,-78],[-64,-84],[-68,-87],[-72,-84]].forEach(([x,z], i) => {
-  const colors = [0xFFCC44, 0xFF8844, 0x44CCFF, 0xFF4488, 0x88FF44, 0xFFFF44];
-  const stall = new THREE.Mesh(new THREE.BoxGeometry(2.8, 2.2, 2.2), makeMat(colors[i]));
-  stall.position.set(x, 1.1, z); stall.castShadow = true; scene.add(stall);
-  const roofM = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.15, 2.8), makeMat(0xFF6600, 0.7));
-  roofM.position.set(x, 2.28, z); scene.add(roofM);
+// Maquis (restaurants de rue) — liste pour le cycle jour/nuit
+const maquis = [];
+
+// Grand marché d'Adjamé
+[
+  [-64,-78],[-68,-81],[-72,-78],[-76,-78],
+  [-64,-84],[-68,-87],[-72,-84],[-76,-84],
+  [-64,-90],[-68,-93],[-72,-90],[-60,-81],
+].forEach(([x,z], i) => {
+  const colors = [0xFFCC44, 0xFF8844, 0x44CCFF, 0xFF4488, 0x88FF44, 0xFFFF44, 0xFF6600, 0x44FFCC, 0xCC44FF, 0xFF88CC, 0x88CCFF, 0xFFCC88];
+  const stall = new THREE.Mesh(new THREE.BoxGeometry(2.8, 2.0, 2.2), makeMat(colors[i % colors.length], 0.8));
+  stall.position.set(x, 1.0, z); stall.castShadow = true; scene.add(stall);
+  // Toit bâche colorée
+  const tarp = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.10, 2.8),
+    makeMat([0xFF4400,0x0044AA,0x00AA22,0xAA0044,0xFFCC00][i%5], 0.65));
+  tarp.position.set(x, 2.12, z); scene.add(tarp);
+  // Poteau de l'étal
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 2.2, 5), makeMat(0x444444));
+  pole.position.set(x + 1.35, 1.1, z + 1.05); scene.add(pole);
 });
 
-// Maquis (restaurants de rue) — enseigne lumineuse
-const maquis = [];
-[[20, -85, 'MAQUIS DU PORT'], [35, -100, 'CHEZ KOUAMÉ'], [12, -115, 'BAR SAVANE']].forEach(([x, z, name]) => {
+// Treichville — maquis et restaurants de rue + tables
+function maquisFull(x, z, name, color) {
   const g = new THREE.Group();
-  const base = new THREE.Mesh(new THREE.BoxGeometry(5, 2.5, 4), makeMat(0xBB7733));
-  base.position.y = 1.25; base.castShadow = true; g.add(base);
-  const sign = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.7, 0.15), makeMat(0xFFAA00, 0.4));
-  sign.position.set(0, 2.9, 2.1); g.add(sign);
-  // Lumière du maquis (s'allume à 23h)
-  const light = new THREE.PointLight(0xFF8800, 0, 8);
-  light.position.set(x, 3.5, z);
+  const base = new THREE.Mesh(new THREE.BoxGeometry(6, 3.0, 5), makeMat(color, 0.75));
+  base.position.y = 1.5; base.castShadow = true; g.add(base);
+  // Terrasse
+  const terrace = new THREE.Mesh(new THREE.BoxGeometry(7, 0.15, 6), makeMat(0xCC9944, 0.7));
+  terrace.position.set(0, 0.075, 0.5); g.add(terrace);
+  // Enseigne lumineuse
+  const sign = new THREE.Mesh(new THREE.BoxGeometry(5.0, 0.75, 0.12),
+    new THREE.MeshStandardMaterial({ color: 0xFFAA00, emissive: 0xFF8800, emissiveIntensity: 0.5, roughness: 0.3 }));
+  sign.position.set(0, 3.4, 2.6); g.add(sign);
+  // Tables extérieures
+  for (let ti = 0; ti < 3; ti++) {
+    const table = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.08, 8), makeMat(0x885522, 0.7));
+    table.position.set(-1.5 + ti * 1.5, 0.75, 3.2); g.add(table);
+    const tableLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.72, 5), makeMat(0x444444));
+    tableLeg.position.set(-1.5 + ti * 1.5, 0.36, 3.2); g.add(tableLeg);
+    // Parasol
+    const parasol = new THREE.Mesh(new THREE.ConeGeometry(0.95, 0.6, 8), makeMat([0xFF4400,0x0044CC,0x00AA22][ti], 0.6));
+    parasol.position.set(-1.5 + ti * 1.5, 2.2, 3.2); g.add(parasol);
+    const parasol_pole = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.5, 5), makeMat(0x888888));
+    parasol_pole.position.set(-1.5 + ti * 1.5, 1.5, 3.2); g.add(parasol_pole);
+  }
+  // Lumière maquis (s'allume à 21h)
+  const light = new THREE.PointLight(0xFF8800, 0, 10);
+  light.position.set(x, 4.0, z);
   scene.add(light);
   g.position.set(x, 0, z); scene.add(g);
   maquis.push({ light, base });
-});
+}
+
+maquisFull(20, -85, 'MAQUIS DU PORT', 0xBB7733);
+maquisFull(35,-102, 'CHEZ KOUAMÉ',    0xAA6622);
+maquisFull(12,-118, 'BAR SAVANE',     0xCC8844);
 
 const lampadaires = [];
 [
@@ -1067,9 +1207,14 @@ function fireBullet() {
   bm.userData.vel.copy(fwd).multiplyScalar(w==='ak47'?1.8:1.2);
   bm.userData.life = 60; bullets.push(bm);
 
-  const fl = new THREE.PointLight(0xFFAA00, 3, 4);
-  fl.position.copy(origin); scene.add(fl);
-  setTimeout(() => scene.remove(fl), 80);
+  // Flash muzzle : simple sprite émissif (pas de PointLight = gains perfs)
+  const fl = new THREE.Mesh(
+    new THREE.SphereGeometry(0.18, 5, 4),
+    new THREE.MeshStandardMaterial({ color:0xFFAA00, emissive:0xFFAA00, emissiveIntensity:3.5, transparent:true, opacity:0.85 })
+  );
+  fl.position.copy(origin).addScaledVector(fwd, 0.8);
+  scene.add(fl);
+  setTimeout(() => scene.remove(fl), 60);
 
   raycasterPool.set(origin, fwd.normalize()); raycasterPool.far = w==='ak47'?60:30;
 
@@ -1325,6 +1470,7 @@ function tryPickup() { checkLootPickup(); }
 //  CYCLE JOUR/NUIT
 // ══════════════════════════════════════════════════════
 const gameTime = { minutes: 8*60, speed: 0.3 };
+let _lastNightState = false;
 
 function updateDayNight(dtMs) {
   gameTime.minutes += gameTime.speed * dtMs / 1000;
@@ -1359,14 +1505,17 @@ function updateDayNight(dtMs) {
   const maqOn = h>=21 || h<4;
   maquis.forEach(m => { m.light.intensity = maqOn ? 2 : 0; });
 
-  // Fenêtres des bâtiments s'allument la nuit
-  buildings.forEach(b => {
-    b.mesh.traverse(child => {
-      if (child.isMesh && child !== b.mesh && child.material?.emissiveIntensity !== undefined) {
-        child.material.emissiveIntensity = isNight ? 0.45 : 0.05;
-      }
+  // Fenêtres des bâtiments s'allument la nuit (seulement si changement)
+  if (_lastNightState !== isNight) {
+    _lastNightState = isNight;
+    buildings.forEach(b => {
+      b.mesh.traverse(child => {
+        if (child.isMesh && child !== b.mesh && child.material?.emissiveIntensity !== undefined) {
+          child.material.emissiveIntensity = isNight ? 0.45 : 0.05;
+        }
+      });
     });
-  });
+  }
 
   updateAmbientSound(isNight, h);
 }
@@ -1660,14 +1809,62 @@ function drawMinimap() {
     mmCtx.beginPath(); mmCtx.arc(ix,iz,2,0,Math.PI*2); mmCtx.fill();
   });
 
-  // Mission target
+  // Mission target — étoile + flèche directionnelle si hors minimap
   if(targetDisc.visible) {
     const tx=cx+(targetDisc.position.x-playerChar.group.position.x)*sc;
     const tz=cy+(targetDisc.position.z-playerChar.group.position.z)*sc;
-    mmCtx.fillStyle='#FF3300';
-    mmCtx.beginPath();
-    for(let i=0;i<5;i++){ const a=(i*4+1)*Math.PI/5-Math.PI/2; const r=i%2===0?6:2.5; mmCtx.lineTo(tx+Math.cos(a)*r,tz+Math.sin(a)*r); }
-    mmCtx.closePath(); mmCtx.fill();
+    const mmRadius = 62;
+    const distFromCenter = Math.sqrt((tx-cx)**2+(tz-cy)**2);
+
+    if (distFromCenter > mmRadius) {
+      // Cible hors minimap : flèche directionnelle sur le bord
+      const angle = Math.atan2(tz-cy, tx-cx);
+      const arrowX = cx + Math.cos(angle)*(mmRadius-8);
+      const arrowZ = cy + Math.sin(angle)*(mmRadius-8);
+      // Fond de flèche
+      mmCtx.save();
+      mmCtx.translate(arrowX, arrowZ);
+      mmCtx.rotate(angle + Math.PI/2);
+      // Clignotement
+      const blink = 0.6 + Math.abs(Math.sin(minimapBlink*3))*0.4;
+      mmCtx.fillStyle = `rgba(255,80,0,${blink})`;
+      mmCtx.strokeStyle = '#fff';
+      mmCtx.lineWidth = 1;
+      // Triangle (flèche)
+      mmCtx.beginPath();
+      mmCtx.moveTo(0, -8); mmCtx.lineTo(5, 4); mmCtx.lineTo(-5, 4);
+      mmCtx.closePath(); mmCtx.fill(); mmCtx.stroke();
+      // Cercle de fond
+      mmCtx.beginPath(); mmCtx.arc(0, 4, 7, 0, Math.PI*2);
+      mmCtx.fillStyle = `rgba(255,50,0,${blink*0.5})`; mmCtx.fill();
+      mmCtx.restore();
+      // Distance en texte
+      const realDist = Math.round(Math.sqrt(
+        (targetDisc.position.x-playerChar.group.position.x)**2 +
+        (targetDisc.position.z-playerChar.group.position.z)**2
+      ));
+      mmCtx.font = 'bold 8px Arial';
+      mmCtx.fillStyle = '#ff8844';
+      mmCtx.textAlign = 'center';
+      mmCtx.fillText(realDist+'m', arrowX, arrowZ + 18);
+      mmCtx.textAlign = 'left';
+    } else {
+      // Cible visible : étoile animée
+      mmCtx.save();
+      const starPulse = 5 + Math.abs(Math.sin(minimapBlink*4))*3;
+      mmCtx.translate(tx, tz);
+      mmCtx.fillStyle = `rgba(255,60,0,${0.7+Math.abs(Math.sin(minimapBlink*3))*0.3})`;
+      mmCtx.strokeStyle = '#ffff00';
+      mmCtx.lineWidth = 1;
+      mmCtx.beginPath();
+      for(let i=0;i<5;i++){
+        const a=(i*4+1)*Math.PI/5-Math.PI/2;
+        const r=i%2===0?starPulse:starPulse*0.4;
+        mmCtx.lineTo(Math.cos(a)*r, Math.sin(a)*r);
+      }
+      mmCtx.closePath(); mmCtx.fill(); mmCtx.stroke();
+      mmCtx.restore();
+    }
   }
 
   // Joueur
@@ -1690,7 +1887,13 @@ function updateFrustumCulling() {
   const camPos = camera.position;
   buildings.forEach(b => {
     const d = Math.sqrt((b.x-camPos.x)**2 + (b.z-camPos.z)**2);
-    b.mesh.visible = d < 280;
+    b.mesh.visible = d < 180;
+  });
+  // Cull NPCs far away
+  npcList.forEach(npc => {
+    if (npc.npc.state === 'dead') return;
+    const d = npc.group.position.distanceTo(camPos);
+    npc.group.visible = d < 120;
   });
 }
 
@@ -2000,7 +2203,7 @@ d.aiTimer += dtMs;
   camera.lookAt(playerChar.group.position.x, playerChar.group.position.y+1.2, playerChar.group.position.z);
 
   // Frustum culling (tous les 10 frames)
-  if (Math.floor(now/16) % 10 === 0) updateFrustumCulling();
+  if (Math.floor(now/16) % 6 === 0) updateFrustumCulling();
 
   updateDayNight(dtMs);
   updateMissions(dtMs);
